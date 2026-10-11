@@ -6,8 +6,10 @@ int main()
 {
 	bool exitWindow = 0;
 	bool draw = 1;
-	const int sHeight = 1080;
-	const int sWidth = 607;
+	// Tamaño de la ventana
+	const int sHeight = 720;
+	const int sWidth = 1280;
+	// Posiciones de los topos
 	Vector2 coords[MAX_TOPOS] = {
 		{sWidth/3, sHeight/4},
 		{2*sWidth/3, sHeight/4},
@@ -17,6 +19,7 @@ int main()
 		{sWidth/3, 3*sHeight/4},
 		{2*sWidth/3, 3*sHeight/4}
 	};
+	// Topos visibles en pantalla
 	bool activeTopo[MAX_TOPOS] = {
 		true,
 		true,
@@ -27,13 +30,15 @@ int main()
 		true
 	};
 
-	InitWindow(sWidth, sHeight, "Wakamole");
+	// Inicializo la ventana
+	InitWindow(sWidth, sHeight, "guacamole");
 
-	Image topo = LoadImage("topo.png");
-	Texture textura = LoadTextureFromImage(topo);
-	textura.height = 100;
+	Image topo = LoadImage("topo.png"); // Carga la imagen en memoria
+	Texture textura = LoadTextureFromImage(topo); // Convierte la imagen en textura (para guardar en gpu)
+	// Ancho y altura de la textura
+	textura.height = 100; 
 	textura.width = 100;
-	UnloadImage(topo);
+	UnloadImage(topo); // Descarga la imagen de memoria, ya que se encuentra guardada como textura
 
 	SetTargetFPS(60);
 
@@ -91,6 +96,7 @@ int main()
 		EndDrawing();
 	}
 	
+	// Desinicializacion
 	UnloadTexture(textura);
 	CloseWindow();
 
