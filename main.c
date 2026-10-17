@@ -1,102 +1,91 @@
 #include "raylib.h"
-
 #define MAX_TOPOS 7
+
+// tipos de topitos
+typedef enum
+{
+	TOPO_NORMAL,
+	TOPO_DORADO,
+	TOPO_BOMBA
+} TipoTopo;
+
+// estructs de cada hoyo y topo
+typedef struct
+{
+	Vector2 posicion;
+	bool activo;
+	float tiempoRestante;
+	TipoTopo tipo;
+} Topo;
 
 int main()
 {
-	bool exitWindow = 0;
-	bool draw = 1;
-	// Tamaño de la ventana
 	const int sHeight = 720;
 	const int sWidth = 1280;
-	// Posiciones de los topos
-	Vector2 coords[MAX_TOPOS] = {
-		{sWidth/3, sHeight/4},
-		{2*sWidth/3, sHeight/4},
-		{sWidth/4, 2*sHeight/4},
-		{2*sWidth/4, 2*sHeight/4},
-		{3*sWidth/4, 2*sHeight/4},
-		{sWidth/3, 3*sHeight/4},
-		{2*sWidth/3, 3*sHeight/4}
-	};
-	// Topos visibles en pantalla
-	bool activeTopo[MAX_TOPOS] = {
-		true,
-		true,
-		true,
-		true,
-		true,
-		true,
-		true
-	};
 
-	// Inicializo la ventana
+	// Inicialización del arreglo con nueva estructura
+	Topo hoyos[MAX_TOPOS] = {
+		{{sWidth / 3, sHeight / 4}, true, 0.0f, TOPO_NORMAL},
+		{{2 * sWidth / 3, sHeight / 4}, true, 0.0f, TOPO_NORMAL},
+		{{sWidth / 4, 2 * sHeight / 4}, true, 0.0f, TOPO_NORMAL},
+		{{2 * sWidth / 4, 2 * sHeight / 4}, true, 0.0f, TOPO_NORMAL},
+		{{3 * sWidth / 4, 2 * sHeight / 4}, true, 0.0f, TOPO_NORMAL},
+		{{sWidth / 3, 3 * sHeight / 4}, true, 0.0f, TOPO_NORMAL},
+		{{2 * sWidth / 3, 3 * sHeight / 4}, true, 0.0f, TOPO_NORMAL}};
+
 	InitWindow(sWidth, sHeight, "guacamole");
 
-	Image topo = LoadImage("topo.png"); // Carga la imagen en memoria
-	Texture textura = LoadTextureFromImage(topo); // Convierte la imagen en textura (para guardar en gpu)
-	// Ancho y altura de la textura
-	textura.height = 100; 
+	Image topo = LoadImage("topo.png");
+	Texture textura = LoadTextureFromImage(topo);
+	textura.height = 100;
 	textura.width = 100;
-	UnloadImage(topo); // Descarga la imagen de memoria, ya que se encuentra guardada como textura
+	UnloadImage(topo);
 
 	SetTargetFPS(60);
 
-	// Main loop
-	while(!WindowShouldClose())
+	// bucle principal del juego
+	while (!WindowShouldClose())
 	{
-		if(IsKeyPressed(KEY_ONE))
+		// detección de clics con el mouse
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 		{
-			if(activeTopo[0]) activeTopo[0] = false;
-			else activeTopo[0] = true;
-		}
-		if(IsKeyPressed(KEY_TWO))
-		{
-			if(activeTopo[1]) activeTopo[1] = false;
-			else activeTopo[1] = true;
-		}
-		if(IsKeyPressed(KEY_THREE))
-		{
-			if(activeTopo[2]) activeTopo[2] = false;
-			else activeTopo[2] = true;
-		}
-		if(IsKeyPressed(KEY_FOUR))
-		{
-			if(activeTopo[3]) activeTopo[3] = false;
-			else activeTopo[3] = true;
-		}
-		if(IsKeyPressed(KEY_FIVE))
-		{
-			if(activeTopo[4]) activeTopo[4] = false;
-			else activeTopo[4] = true;
-		}
-		if(IsKeyPressed(KEY_SIX))
-		{
-			if(activeTopo[5]) activeTopo[5] = false;
-			else activeTopo[5] = true;
-		}
-		if(IsKeyPressed(KEY_SEVEN))
-		{
-			if(activeTopo[6]) activeTopo[6] = false;
-			else activeTopo[6] = true;
-		}
+			Vector2 mousePos = GetMousePosition();
 
-		// Drawing
-		BeginDrawing();
-
-		ClearBackground(BLACK);
-		for(int i = 0; i < MAX_TOPOS; i++)
-		{
-			if(activeTopo[i])
+			for (int i = 0; i < MAX_TOPOS; i++)
 			{
-				DrawTexture(textura, coords[i].x - textura.width/2, coords[i].y - textura.height/2, WHITE);
+				if (hoyos[i].activo)
+				{
+					// rectangulo para poder dar clic al topo
+					Rectangle areaTopo = {
+						hoyos[i].posicion.x - textura.width / 2.0f,
+						hoyos[i].posicion.y - textura.height / 2.0f,
+						(float)textura.width,
+						(float)textura.height};
+					// se verifica si el clic cae dentro del recatngulo del topito y si si se oculta
+					if (CheckCollisionPointRec(mousePos, areaTopo))
+					{
+						hoyos[i].activo = false;
+					}
+				}
+			}
+		}
+
+		// Dibujado
+		BeginDrawing();
+		ClearBackground(BLACK);
+
+		for (int i = 0; i < MAX_TOPOS; i++)
+		{
+			if (hoyos[i].activo)
+			{
+				DrawTexture(textura, hoyos[i].posicion.x - textura.width / 2, hoyos[i].posicion.y - textura.height / 2, WHITE);
 			}
 		}
 
 		EndDrawing();
 	}
-	
-	// Desinicializacion
+
+	// Desinicialización
 	UnloadTexture(textura);
 	CloseWindow();
 
