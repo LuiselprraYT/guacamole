@@ -23,6 +23,11 @@ int main()
 	const int sHeight = 720;
 	const int sWidth = 1280;
 
+	int puntajes[10];
+	int puntajeActual = 0;
+	char tPuntaje[50];
+	int tAncho;
+
 	// inicialización del arreglo con nueva estructura
 	Topo hoyos[MAX_TOPOS] = {
 		{{sWidth / 3, sHeight / 4}, true, 0.0f, TOPO_NORMAL},
@@ -65,15 +70,21 @@ int main()
 					if (CheckCollisionPointRec(mousePos, areaTopo))
 					{
 						hoyos[i].activo = false;
+						puntajeActual += 100;
 					}
 				}
 			}
 		}
+		
+		// Maneja el texto de puntaje
+		TextCopy(tPuntaje, TextFormat("Puntaje: %d", puntajeActual));
+		tAncho = MeasureText(tPuntaje, 20);
 
 		// Dibujado
 		BeginDrawing();
 		ClearBackground(BLACK);
 
+		DrawText(tPuntaje, (sWidth - tAncho) / 2, sHeight / 100, 20, MAGENTA);
 		for (int i = 0; i < MAX_TOPOS; i++)
 		{
 			if (hoyos[i].activo)
