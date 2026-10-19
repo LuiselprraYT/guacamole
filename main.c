@@ -23,6 +23,8 @@ int main()
 	const int sHeight = 720;
 	const int sWidth = 1280;
 
+	InitWindow(sWidth, sHeight, "Guacamole");
+
 	// inicialización del arreglo con nueva estructura
 	Topo hoyos[MAX_TOPOS] = {
 		{{sWidth / 3, sHeight / 4}, true, 0.0f, TOPO_NORMAL},
@@ -32,20 +34,63 @@ int main()
 		{{3 * sWidth / 4, 2 * sHeight / 4}, true, 0.0f, TOPO_NORMAL},
 		{{sWidth / 3, 3 * sHeight / 4}, true, 0.0f, TOPO_NORMAL},
 		{{2 * sWidth / 3, 3 * sHeight / 4}, true, 0.0f, TOPO_NORMAL}};
-
-	InitWindow(sWidth, sHeight, "guacamole");
-
+	// topo normal
 	Image topo = LoadImage("topo.png");
 	Texture textura = LoadTextureFromImage(topo);
 	textura.height = 100;
 	textura.width = 100;
 	UnloadImage(topo);
-
+	// topo dorado
+	Image topo_dorado = LoadImage("topo_dorado.png");
+	Texture textura = LoadTextureFromImage(topo_dorado);
+	textura.height = 100;
+	textura.width = 100;
+	// topo bomba
+	Image topo_bomba = LoadImage("topo_bomba.png");
+	Texture textura = LoadTextureFromImage(topo_bomba);
+	textura.height = 100;
+	textura.width = 100;
 	SetTargetFPS(60);
+
+	// Variables para todo el tema del control del teimpo
+	float tiempoJuego = 45.0f, tiempoDeAparicion = 0.9f;
+	bool gameOver = false;
 
 	// bucle principal del juego
 	while (!WindowShouldClose())
 	{
+		float dt = GetFrameTime(); // tiempo trancurrido entre frames
+		// cronometro del juego
+		if (!gameOver)
+		{
+			tiempoJuego -= dt;
+			gameOver = true;
+		}
+		// aparicion del topo
+		tiempoDeAparicion -= dt;
+		if (tiempoDeAparicion <= 0.0f)
+		{
+			tiempoDeAparicion = 0.9f; // reiniciar tiempo en cada topo
+			int indice = GetRandomValue(0, MAX_TOPOS - 1);
+			if (!hoyos[indice].activo)
+			{
+				hoyos[indice].activo = true;
+				hoyos[indice].tiempoRestante = 1.2f; // topo arriba
+
+				// probabilidaddes de cada too arriba
+				int probabilidad = GetRandomValue(1, 100);
+				if (probabilidad < 60)
+					hoyos[indice].tipo = TOPO_NORMAL;
+				else if (probabilidad <= 85)
+				{
+					hoyos[indice].tipo = TOPO_DORADO;
+				}
+				else
+				{
+					hoyos[indice].tipo = TOPO_BOMBA;
+				}
+			}
+		}
 		// detección de clics con el mouse
 		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 		{
