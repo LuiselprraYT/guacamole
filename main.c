@@ -115,7 +115,18 @@ int main()
 					if (CheckCollisionPointRec(mousePos, areaTopo))
 					{
 						hoyos[i].activo = false;
-						puntajeActual += 100;
+						switch(hoyos[i].tipo)
+						{
+							case TOPO_NORMAL:
+								puntajeActual += 100;
+								break;
+							case TOPO_DORADO:
+								puntajeActual += 500;
+								break;
+							case TOPO_BOMBA:
+								puntajeActual -= 200;
+								break;
+						}
 					}
 				}
 			}
@@ -130,6 +141,7 @@ int main()
 		ClearBackground(BLACK);
 
 		DrawText(tPuntaje, (sWidth - tAncho) / 2, sHeight / 100, 20, MAGENTA);
+
 		for (int i = 0; i < MAX_TOPOS; i++)
 		{
 			if (hoyos[i].activo)
