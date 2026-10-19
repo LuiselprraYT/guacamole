@@ -18,6 +18,8 @@ typedef struct
 	TipoTopo tipo;
 } Topo;
 
+void mostrarClasificacion(int c[], int index, int w, int h);
+
 int main()
 {
 	const int sHeight = 720;
@@ -27,6 +29,8 @@ int main()
 	int puntajeActual = 0;
 	char tPuntaje[50];
 	int tAncho;
+
+	bool clasi = false;
 	
 	InitWindow(sWidth, sHeight, "Guacamole");
 
@@ -131,6 +135,12 @@ int main()
 				}
 			}
 		}
+
+		// manejo de teclas
+		if(IsKeyPressed(KEY_TAB))
+		{
+			clasi = (clasi) ? false : true;
+		}
 		
 		// Maneja el texto de puntaje
 		TextCopy(tPuntaje, TextFormat("Puntaje: %d", puntajeActual));
@@ -150,6 +160,10 @@ int main()
 			}
 		}
 
+		if (clasi)
+		{
+			mostrarClasificacion(puntajes, 1, sWidth, sHeight);
+		}
 		EndDrawing();
 	}
 
@@ -158,4 +172,20 @@ int main()
 	CloseWindow();
 
 	return 0;
+}
+
+void mostrarClasificacion(int c[], int index, int w, int h)
+{
+	float size = 0.5;
+	int width = w * size;
+	int height = h * size; 
+	float off = 0.25;
+
+	DrawRectangle(w * off, h * off, width, height, DARKGRAY);
+	DrawText("Tabla de clasificacion", w * off + 5, h * off + 10, 20, MAGENTA);
+
+	for(int i = 0; i < 10; i++)
+	{
+		DrawText(TextFormat("%d- %d", i + 1, c[i]), w * off + 20, h * off + 50 + (25 * i), 20, MAGENTA);
+	}
 }
