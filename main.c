@@ -42,12 +42,12 @@ int main()
 	UnloadImage(topo);
 	// topo dorado
 	Image topo_dorado = LoadImage("topo_dorado.png");
-	Texture textura = LoadTextureFromImage(topo_dorado);
+	Texture textura_dorado = LoadTextureFromImage(topo_dorado);
 	textura.height = 100;
 	textura.width = 100;
 	// topo bomba
 	Image topo_bomba = LoadImage("topo_bomba.png");
-	Texture textura = LoadTextureFromImage(topo_bomba);
+	Texture textura_bomba = LoadTextureFromImage(topo_bomba);
 	textura.height = 100;
 	textura.width = 100;
 	SetTargetFPS(60);
