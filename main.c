@@ -9,7 +9,7 @@ typedef enum
 	TOPO_BOMBA
 } TipoTopo;
 
-// estructs de cada hoyo y topo
+// struct de cada hoyo y topo
 typedef struct
 {
 	Vector2 posicion;
@@ -23,7 +23,7 @@ int main()
 	const int sHeight = 720;
 	const int sWidth = 1280;
 
-	// Inicialización del arreglo con nueva estructura
+	// inicialización del arreglo con nueva estructura
 	Topo hoyos[MAX_TOPOS] = {
 		{{sWidth / 3, sHeight / 4}, true, 0.0f, TOPO_NORMAL},
 		{{2 * sWidth / 3, sHeight / 4}, true, 0.0f, TOPO_NORMAL},
