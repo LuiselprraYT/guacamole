@@ -9,7 +9,7 @@
 #define TIEMPO_ENTRE_TOPOS 1.0f // segundos entre cada aparición (menor = salen más seguido)
 #define DURACION_TOPO 2.0f		// segundos totales que un topo permanece en pantalla
 #define TIEMPO_ANIMACION 0.3f	// segundos que tarda en subir y en bajar (menor = más rápido)
-#define DURACION_PARTIDA 25.0f	// segundos que dura cada partida
+#define DURACION_PARTIDA 10.0f	// segundos que dura cada partida
 // ================================================================
 
 // ===================== AJUSTES DE TEXTOS FLOTANTES ==============
@@ -129,6 +129,58 @@ static void DibujarTopo(Texture t, Vector2 centro, float progreso)
 	DrawTextureRec(t, origen, destino, WHITE);
 }
 
+
+int ordenarClasificacion(int c[], int val)
+{
+	int pos = -1;
+	int temp;
+	for(int i = 0; i < 10; i++)
+	{
+		if(c[i] < val)
+		{
+			if (pos == -1) pos = i;
+			temp = c[i];
+			c[i] = val;
+			val = temp;
+		}
+	}
+	return pos;
+}
+
+void mostrarClasificacion(int c[], int index, int w, int h)
+{
+	float size = 0.5;
+	int width = w * size;
+	int height = h * size * 0.75; 
+	float off = 0.25;
+
+	DrawText("Tabla de clasificacion", (w - MeasureText("Tabla de clasificación", 30)) / 2, h * off + 160, 30, MAGENTA);
+
+	for(int i = 0; i < 5; i++)
+	{
+		if(index == i)
+		{
+			DrawText(TextFormat("%-2d- %d", i + 1, c[i]), (w - MeasureText(TextFormat("%-2d- %d", i + 1, c[i]), 30)) / 2 - 100, h * off + 210 + (35 * i), 30, GREEN);
+		}
+		else
+		{
+			DrawText(TextFormat("%-2d- %d", i + 1, c[i]), (w - MeasureText(TextFormat("%-2d- %d", i + 1, c[i]), 30)) / 2 - 100, h * off + 210 + (35 * i), 30, MAGENTA);
+		}
+	}
+
+	for(int i = 5; i < 10; i++)
+	{
+		if(index == i)
+		{
+			DrawText(TextFormat("%-2d- %d", i + 1, c[i]), w / 2 + 100, h * off + 210 + 35 * (i - 5), 30, GREEN);
+		}
+		else
+		{
+			DrawText(TextFormat("%-2d- %d", i + 1, c[i]), w / 2 + 100, h * off + 210 + 35 * (i - 5), 30, MAGENTA);
+		}
+	}
+}
+
 int main()
 {
 	// Tamaño "lógico" del juego: todo se dibuja a 1280x720 y luego se escala a la ventana
@@ -146,7 +198,11 @@ int main()
 	SetTextureFilter(lienzo.texture, TEXTURE_FILTER_BILINEAR);
 
 	int puntajeActual = 0;
+	int paPosicion;
 	int mejorPuntaje = 0;
+
+	int clasi[10] = { 0 };
+	bool cOrdenado = false;
 
 	// Todos los hoyos empiezan vacíos
 	Topo hoyos[MAX_TOPOS] = {
@@ -167,6 +223,9 @@ int main()
 	Texture texDorado = CargarTopo("topo_dorado.png");
 	Texture texBomba = CargarTopo("topo_bomba.png");
 
+	// Pantalla de inicio
+	Rectangle boton = {sWidth / 2.0f - 190, 210, 380, 120};
+
 	// Variables de control del tiempo
 	float tiempoJuego = DURACION_PARTIDA;
 	float tiempoDeAparicion = TIEMPO_ENTRE_TOPOS;
@@ -178,7 +237,7 @@ int main()
 		float dt = GetFrameTime();
 
 		// F11 alterna pantalla completa
-		if (IsKeyPressed(KEY_F1))
+		if (IsKeyPressed(KEY_F11))
 			ToggleBorderlessWindowed();
 
 		// Cálculo de cómo se acomoda el lienzo en la ventana (conserva proporción)
@@ -207,6 +266,24 @@ int main()
 			}
 		}
 
+		if (estado == ESTADO_INICIO)
+		{
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && CheckCollisionPointRec(mousePos, boton))
+			{
+				estado = ESTADO_JUGANDO;
+				puntajeActual = 0;
+				cOrdenado = false;
+				tiempoJuego = DURACION_PARTIDA;
+				tiempoDeAparicion = TIEMPO_ENTRE_TOPOS;
+				for (int i = 0; i < MAX_TOPOS; i++)
+				{
+					hoyos[i].activo = false;
+					hoyos[i].golpeado = false;
+				}
+				for (int i = 0; i < MAX_POPUPS; i++)
+					popups[i].activo = false;
+			}
+		}
 		if (estado == ESTADO_JUGANDO)
 		{
 			// cronómetro del juego
@@ -313,6 +390,7 @@ int main()
 			// ESPACIO inicia el juego (desde la pantalla de inicio) o lo reinicia (desde el fin)
 			estado = ESTADO_JUGANDO;
 			puntajeActual = 0;
+			cOrdenado = false;
 			tiempoJuego = DURACION_PARTIDA;
 			tiempoDeAparicion = TIEMPO_ENTRE_TOPOS;
 			for (int i = 0; i < MAX_TOPOS; i++)
@@ -322,6 +400,12 @@ int main()
 			}
 			for (int i = 0; i < MAX_POPUPS; i++)
 				popups[i].activo = false;
+		}
+
+		if(estado == ESTADO_FIN && !cOrdenado)
+		{
+			paPosicion = ordenarClasificacion(clasi, puntajeActual);
+			cOrdenado = true;
 		}
 
 		// ---------- Dibujado dentro del lienzo de 1280x720 ----------
@@ -354,8 +438,8 @@ int main()
 				continue;
 
 			Texture t = (hoyos[i].tipo == TOPO_DORADO)	? texDorado
-						: (hoyos[i].tipo == TOPO_BOMBA) ? texBomba
-														: texNormal;
+				: (hoyos[i].tipo == TOPO_BOMBA) ? texBomba
+				: texNormal;
 			DibujarTopo(t, hoyos[i].posicion, ProgresoTopo(&hoyos[i]));
 		}
 
@@ -370,11 +454,11 @@ int main()
 			int y = (int)(popups[i].posicion.y - avance * 70.0f);
 
 			const char *texto = (popups[i].valor > 0)	? TextFormat("+%d", popups[i].valor)
-								: (popups[i].valor < 0) ? TextFormat("%d", popups[i].valor)
-														: "0";
+				: (popups[i].valor < 0) ? TextFormat("%d", popups[i].valor)
+				: "0";
 			Color color = (popups[i].valor >= 300) ? GOLD
-						  : (popups[i].valor > 0)  ? LIME
-												   : RED;
+				: (popups[i].valor > 0)  ? LIME
+				: RED;
 			int x = (int)popups[i].posicion.x - MeasureText(texto, TAM_POPUP) / 2;
 
 			DrawTextoContorno(texto, x, y, TAM_POPUP, Fade(color, alfa), Fade(BLACK, alfa), 3);
@@ -385,14 +469,13 @@ int main()
 		{
 			DrawRectangle(0, 0, sWidth, sHeight, Fade(BLACK, 0.55f));
 
-			const char *titulo = "GUACAMOLE";
+			const char *titulo = "WHAC-A-MOLITO";
 			DrawTextoContorno(titulo, (sWidth - MeasureText(titulo, 96)) / 2, 70, 96, GOLD, BLACK, 4);
 
 			// botón START
-			Rectangle boton = {sWidth / 2.0f - 190, 210, 380, 120};
 			DrawRectangleRounded((Rectangle){boton.x - 6, boton.y - 6, boton.width + 12, boton.height + 12}, 0.35f, 10, WHITE);
 			DrawRectangleRounded(boton, 0.35f, 10, (Color){30, 140, 50, 255});
-			const char *start = "START";
+			const char *start = "INICIO";
 			DrawText(start, (sWidth - MeasureText(start, 72)) / 2, (int)boton.y + 24, 72, WHITE);
 
 			// mensaje parpadeante
@@ -426,9 +509,10 @@ int main()
 			const char *final = TextFormat("Puntaje final: %d", puntajeActual);
 			const char *reiniciar = "Presiona ESPACIO para jugar de nuevo";
 
-			DrawText(fin, (sWidth - MeasureText(fin, 60)) / 2, sHeight / 2 - 100, 60, RED);
-			DrawText(final, (sWidth - MeasureText(final, 40)) / 2, sHeight / 2, 40, WHITE);
-			DrawText(reiniciar, (sWidth - MeasureText(reiniciar, 28)) / 2, sHeight / 2 + 70, 28, LIGHTGRAY);
+			DrawText(fin, (sWidth - MeasureText(fin, 60)) / 2, 100, 60, RED);
+			DrawText(final, (sWidth - MeasureText(final, 40)) / 2, 200, 40, WHITE);
+			DrawText(reiniciar, (sWidth - MeasureText(reiniciar, 28)) / 2, 270, 28, LIGHTGRAY);
+			mostrarClasificacion(clasi, paPosicion, sWidth, sHeight);
 		}
 		EndTextureMode();
 
