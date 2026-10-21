@@ -4,20 +4,25 @@
 #include "raylib.h"
 #include <math.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
 #define MAX_TOPOS 7
 #define ANCHO_TOPO 160 // Ancho al que se redimensionan los sprites
 
 // --- Tiempos y Velocidades ---
-#define TIEMPO_ENTRE_TOPOS 0.9 // Segundos entre cada aparición
-#define DURACION_TOPO 2.0f	   // Segundos totales que un topo permanece visible
-#define TIEMPO_ANIMACION 0.3f  // Segundos que tarda en subir y bajar
-#define DURACION_PARTIDA 25.0f // Duración total de la partida
+#define TIEMPO_ENTRE_TOPOS 0.9f // Segundos entre cada aparición
+#define DURACION_TOPO 2.0f		// Segundos totales que un topo permanece visible
+#define TIEMPO_ANIMACION 0.3f	// Segundos que tarda en subir y bajar
+#define DURACION_PARTIDA 25.0f	// Duración total de la partida
 
 // --- Ajustes de Texto Flotante ---
 #define MAX_POPUPS 10
 #define DURACION_POPUP 1.0f // Segundos de visibilidad del puntaje flotante
 #define TAM_POPUP 48		// Tamaño de letra del puntaje flotante
+
+// --- Tabla de Clasificación ---
+#define MAX_CLASIFICACION 5
 
 // ============================================================================
 // 2. ESTRUCTURAS Y ENUMERACIONES (DATOS)
@@ -52,6 +57,12 @@ typedef struct
 	int valor;
 	bool activo;
 } Popup;
+
+typedef struct
+{
+	char nombre[16];
+	int puntaje;
+} Jugador;
 
 // ============================================================================
 // 3. FUNCIONES AUXILIARES Y DE RENDERIZADO
@@ -132,6 +143,48 @@ static void DibujarTopo(Texture t, Vector2 centro, float progreso)
 	DrawTextureRec(t, origen, destino, WHITE);
 }
 
+// Actualiza la tabla de clasificación con el puntaje obtenido
+static int ActualizarClasificacion(Jugador clasi[], int puntaje)
+{
+	int posicion = -1;
+	for (int i = 0; i < MAX_CLASIFICACION; i++)
+	{
+		if (puntaje > clasi[i].puntaje)
+		{
+			posicion = i;
+			break;
+		}
+	}
+
+	if (posicion != -1)
+	{
+		for (int j = MAX_CLASIFICACION - 1; j > posicion; j--)
+		{
+			clasi[j] = clasi[j - 1];
+		}
+		snprintf(clasi[posicion].nombre, sizeof(clasi[posicion].nombre), "Tu Record");
+		clasi[posicion].puntaje = puntaje;
+	}
+	return posicion;
+}
+
+// Muestra la tabla de clasificación en la pantalla de Fin de Juego
+static void mostrarClasificacion(Jugador clasi[], int paPosicion, int sWidth, int sHeight)
+{
+	int startY = 330;
+	const char *titulo = "TABLA DE CLASIFICACION";
+	DrawTextoContorno(titulo, (sWidth - MeasureText(titulo, 32)) / 2, startY, 32, GOLD, BLACK, 2);
+
+	for (int i = 0; i < MAX_CLASIFICACION; i++)
+	{
+		Color colorTexto = (i == paPosicion) ? YELLOW : WHITE;
+		const char *linea = TextFormat("%d. %-12s %5d pts", i + 1, clasi[i].nombre, clasi[i].puntaje);
+		int x = (sWidth - MeasureText(linea, 26)) / 2;
+		int y = startY + 45 + (i * 32);
+		DrawTextoContorno(linea, x, y, 26, colorTexto, BLACK, 2);
+	}
+}
+
 // ============================================================================
 // 4. FUNCIÓN PRINCIPAL (MAIN)
 // ============================================================================
@@ -166,14 +219,22 @@ int main()
 	Texture2D texMartillo = LoadTexture("martillo.png");
 
 	// ------------------------------------------------------------------------
-	// 4.3 INICIALIZACIÓN DE VARIABLES DEL JUEGO
+	// 4.3 INICIALIZACIÓN DE VARIABLES DEL JUEGO Y CLASIFICACIÓN
 	// ------------------------------------------------------------------------
 	int puntajeActual = 0;
 	int mejorPuntaje = 0;
+	int paPosicion = -1;
 	float tiempoJuego = DURACION_PARTIDA;
 	float tiempoDeAparicion = TIEMPO_ENTRE_TOPOS;
 	Estado estado = ESTADO_INICIO;
 	bool pausado = false;
+
+	Jugador clasi[MAX_CLASIFICACION] = {
+		{"Ultra", 1200},
+		{"Luis", 900},
+		{"Pro", 700},
+		{"Jugador 4", 500},
+		{"Jugador 5", 300}};
 
 	Topo hoyos[MAX_TOPOS] = {
 		{{sWidth / 3, sHeight / 4}, false, 0.0f, TOPO_NORMAL, false},
@@ -244,6 +305,7 @@ int main()
 					tiempoJuego = DURACION_PARTIDA;
 					tiempoDeAparicion = TIEMPO_ENTRE_TOPOS;
 					pausado = false;
+					paPosicion = -1;
 					for (int i = 0; i < MAX_TOPOS; i++)
 					{
 						hoyos[i].activo = false;
@@ -263,6 +325,8 @@ int main()
 					estado = ESTADO_FIN;
 					if (puntajeActual > mejorPuntaje)
 						mejorPuntaje = puntajeActual;
+
+					paPosicion = ActualizarClasificacion(clasi, puntajeActual);
 				}
 
 				// Ocultar topos cuando expire su tiempo
@@ -276,13 +340,11 @@ int main()
 					}
 				}
 
-				// Generar nuevo topo
+				// Generar nuevos topos (de 1 a 3 a la vez)
 				tiempoDeAparicion -= dt;
 				if (tiempoDeAparicion <= 0.0f)
 				{
 					tiempoDeAparicion = TIEMPO_ENTRE_TOPOS;
-
-					// Elige cuántos topos va a intentar activar en este ciclo (entre 1 y 3)
 					int cantidadASacar = GetRandomValue(1, 3);
 
 					for (int k = 0; k < cantidadASacar; k++)
@@ -364,6 +426,7 @@ int main()
 					tiempoJuego = DURACION_PARTIDA;
 					tiempoDeAparicion = TIEMPO_ENTRE_TOPOS;
 					pausado = false;
+					paPosicion = -1;
 					for (int i = 0; i < MAX_TOPOS; i++)
 					{
 						hoyos[i].activo = false;
@@ -437,13 +500,13 @@ int main()
 		{
 			DrawRectangle(0, 0, sWidth, sHeight, Fade(BLACK, 0.55f));
 
-			const char *titulo = "GUACAMOLE";
+			const char *titulo = "WHAC-A-MOLITO";
 			DrawTextoContorno(titulo, (sWidth - MeasureText(titulo, 96)) / 2, 70, 96, GOLD, BLACK, 4);
 
 			Rectangle boton = {sWidth / 2.0f - 190, 210, 380, 120};
 			DrawRectangleRounded((Rectangle){boton.x - 6, boton.y - 6, boton.width + 12, boton.height + 12}, 0.35f, 10, WHITE);
 			DrawRectangleRounded(boton, 0.35f, 10, (Color){30, 140, 50, 255});
-			const char *start = "START";
+			const char *start = "INICIO";
 			DrawText(start, (sWidth - MeasureText(start, 72)) / 2, (int)boton.y + 24, 72, WHITE);
 
 			float pulso = 0.55f + 0.45f * sinf((float)GetTime() * 4.0f);
@@ -475,9 +538,11 @@ int main()
 			const char *final = TextFormat("Puntaje final: %d", puntajeActual);
 			const char *reiniciar = "Presiona ESPACIO para jugar de nuevo";
 
-			DrawText(fin, (sWidth - MeasureText(fin, 60)) / 2, sHeight / 2 - 100, 60, RED);
-			DrawText(final, (sWidth - MeasureText(final, 40)) / 2, sHeight / 2, 40, WHITE);
-			DrawText(reiniciar, (sWidth - MeasureText(reiniciar, 28)) / 2, sHeight / 2 + 70, 28, LIGHTGRAY);
+			DrawText(fin, (sWidth - MeasureText(fin, 60)) / 2, 80, 60, RED);
+			DrawText(final, (sWidth - MeasureText(final, 40)) / 2, 160, 40, WHITE);
+			DrawText(reiniciar, (sWidth - MeasureText(reiniciar, 28)) / 2, 230, 28, LIGHTGRAY);
+
+			mostrarClasificacion(clasi, paPosicion, sWidth, sHeight);
 		}
 
 		// --- DIBUJAR OVERLAY DE PAUSA EN EL LIENZO ---
